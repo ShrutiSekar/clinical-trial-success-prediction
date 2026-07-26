@@ -38,43 +38,42 @@ print("Project folders are ready!")
 # ==========================================================
 # STEP 3: Connect to ClinicalTrials.gov API
 # ==========================================================
+class ClinicalTrialProjectError(Exception):
+    """Base exception for the project."""
 
-api_url = "https://clinicaltrials.gov/api/v2/studies?pageSize=5"
+page_size = 1000
+all_studies = []
+next_page_token = None
+
+while True:
+    if next_page_token is None:
+        api_url = (f"https://clinicaltrials.gov/api/v2/studies?"
+                       f"pageSize={page_size}")
+    else:
+        api_url = (f"https://clinicaltrials.gov/api/v2/studies?"
+                       f"pageSize={page_size}&nextPageToken={next_page_token}")
+
+    response = requests.get(api_url)
+    if response.status_code != 200:
+        raise ClinicalTrialProjectError(
+        f"API request failed with status code {response.status_code}"
+    )
+
+    data = response.json()
+    studies = data["studies"]
+    all_studies.extend(studies)
+    print(f"Collected studies: {len(all_studies)}")
+
+    next_page_token = data.get("nextPageToken")
+    if not next_page_token:
+        break
 
 
-response = requests.get(api_url)
-
-
-# Check whether API request was successful
-
-if response.status_code == 200:
-    print("API request successful!")
-else:
-    print("API request failed")
-
-
-# Convert JSON response into Python dictionary
-
-data = response.json()
-
-
-# ==========================================================
-# STEP 4: Explore API Response Structure
-# ==========================================================
-
-print(data.keys())
-
-
-# Extract studies list
-
-studies = data["studies"]
-
-
-print(type(studies))
-print(f"Number of studies retrieved: {len(studies)}")
-
+print("\nData collection completed!")
+print(f"Total studies collected: {len(all_studies)}")
 
 # Explore first study
+studies = all_studies
 
 data_study = studies[0]
 
